@@ -3,29 +3,37 @@
 var watchInlineElements = true,
 // Boolean to relative urls in CSS * { property: url('') }
     watchCssUrls = true,
-// An object best represents a set
-    resources = (function(){
-      var retObj = {},
-          set = {};
-      retObj.add = function (key) {
-        set[key] = 1;
-      };
-      retObj.items = function () {
-        // Localize for faster multiple lookups [Zakas]
-        var _set = set,
-            key,
-            retArr = [];
-        for( key in _set ) {
-          if( _set.hasOwnProperty(key) ) {
-            // Faster than push [Zakas]
-            retArr[retArr.length] = key;
-          }
-        }
-      };
-      return retObj;
-    }());
+// Callback to run once all resources are collected
+    callback = function(resources){console.log(resources)};
 
-// TODO: Allow for other hosts, paths, etc
+function Set() {
+  var set = {};
+
+  this.add = function (key) {
+    // Do not accept undefined keys
+    if( !key ) {
+      return;
+    }
+    set[key] = 1;
+  };
+
+  this.items = function () {
+    // Localize for faster multiple lookups [Zakas]
+    var _set = set,
+        key,
+        retArr = [];
+
+    for( key in _set ) {
+      if( _set.hasOwnProperty(key) ) {
+        // Faster than push [Zakas]
+        retArr[retArr.length] = key;
+      }
+    }
+
+    return retArr;
+  };
+}
+
 // TODO: Test in IE6
 // TODO: Wrap in anonymous function
 
@@ -33,11 +41,38 @@ var watchInlineElements = true,
 /* Attribution: https://github.com/ded/domready */
 !function(a,b){this[a]=this.domReady=b()}("domready",function(a){function l(a){k=1;while(a=b.shift())a()}var b=[],c,d=!1,e=document,f=e.documentElement,g=f.doScroll,h="DOMContentLoaded",i="addEventListener",j="onreadystatechange",k=/^loade|c/.test(e.readyState);e[i]&&e[i](h,c=function(){e.removeEventListener(h,c,d),l()},d),g&&e.attachEvent(j,c=function(){/^c/.test(e.readyState)&&(e.detachEvent(j,c),l())});return a=g?function(c){self!=top?k?c():b.push(c):function(){try{f.doScroll("left")}catch(b){return setTimeout(function(){a(c)},50)}c()}()}:function(a){k?a():b.push(a)}});
 
+var host = location.hostname;
+function checkUrlRelative(url) {
+  var relative = true,
+      urlHostArr,
+      _host;
+
+  // If the url is absolute
+  if( url.match(/([^:]*:)?\/\//) ) {
+    relative = false;
+
+    // Get hostname
+    urlHostArr = url.match(/\/\/([^\/]*)/);
+    if( urlHostArr ) {
+      _host = host;
+      urlHost = urlHostArr[1];
+
+      // TODO: Robustify this? (www. vs www2. will not match)
+      // Check if one is a subdomain of the other (this also accounts for same domain)
+      if( _host.indexOf( urlHost ) !== -1 || urlHost.indexOf(_host) !== -1 ) {
+        relative = true;
+      }
+    }
+  }
+
+  return relative;
+}
+
 function grabRelativePath(str, quoteIndex) {
   var quote = str[quoteIndex],
       endIndex,
       url;
-  
+
   // Skip any wierd script instances
   if( !quote.match(/['"]/) ) {
     return;
@@ -57,66 +92,81 @@ function grabRelativePath(str, quoteIndex) {
 
   // Collect the URL
   url = str.slice(quoteIndex + 1, endIndex);
-  
-  // TODO: Move out to another function
-  // Check for absolute url
-  if( url.match(/([^:]*:)?\/\//) ) {
-    // TODO: Handle same hostname
+
+  // Check out url
+  if( !checkUrlRelative(url) ) {
     return;
   }
-  
+
   // Return the valid relative url
   return url;
 }
 
-// In innerHTML, find all src=""
-if( watchInlineElements ) {
-  domready(function(){
-    var srcWithJunkArr = document.body.innerHTML.match(/src=([^>]*>)/g),
-        srcWithJunk,
-        i = srcWithJunkArr.length,
-        srcStr;
+// Run collecter onces dom is ready
+domready(function(){
+  var resources = new Set();
+  
+  // Track this document
+  resources.add(location);
 
-    // Loop through all the sources
-    while( i-- ) {
-      // Find the quote used for the source
-      srcWithJunk = srcWithJunkArr[i];
-      srcStr = grabRelativePath(srcWithJunk, 4);
-      if( srcStr !== undefined ) {
-        resources.add(srcStr);
+  // In innerHTML, find all src=""
+  if( watchInlineElements ) {
+      var srcWithJunkArr = document.body.innerHTML.match(/src=([^>]*>)/g),
+          srcWithJunk,
+          i = srcWithJunkArr.length,
+          srcStr;
+
+      // Loop through all the sources
+      while( i-- ) {
+        // Find the quote used for the source
+        srcWithJunk = srcWithJunkArr[i];
+        srcStr = grabRelativePath(srcWithJunk, 4);
+        // console.log(srcStr);
+        if( srcStr !== undefined ) {
+          resources.add(srcStr);
+        }
       }
-    }
-  });
-}
+  }
 
-// In styleSheets, find all url()
-if( watchCssUrls ) {
-  var styleSheets = document.styleSheets || [],
-      styleSheet,
-      i = styleSheets.length,
-      rules,
-      j,
-      text,
-      urlMatches,
-      k,
-      urlStr;
+  // In styleSheets, find all url()
+  if( watchCssUrls ) {
+    var styleSheets = document.styleSheets || [],
+        styleSheet,
+        i = styleSheets.length,
+        rules,
+        j,
+        text,
+        urlMatches,
+        k,
+        urlStr;
 
-  while( i-- ) {
-    styleSheet = styleSheets[i];
-    // TODO: Collect stylesheet url
-    // TODO: Only parse if styleSheet is relative
-    rules = styleSheet.cssRules || styleSheet.rules || [];
-    j = rules.length;
-    while( j-- ) {
-      text = rules[j].cssText;
-      urlMatches = text.match(/url\([^\)]*\)/g);
-      if( urlMatches ) {
-        k = urlMatches.length;
-        while( k-- ) {
-          var urlStr = grabRelativePath(urlMatches[k], 4);
-          resources.add(urlStr);
+    while( i-- ) {
+      styleSheet = styleSheets[i];
+
+      // Collect stylesheet url
+      urlStr = styleSheet.href || '';
+      if( checkUrlRelative(urlStr) ) {
+        // Store stylesheet to resources
+        resources.add(urlStr);
+
+        // Grab inner urls
+        rules = styleSheet.cssRules || styleSheet.rules || [];
+        j = rules.length;
+        while( j-- ) {
+          text = rules[j].cssText;
+          urlMatches = text.match(/url\([^\)]*\)/g);
+          if( urlMatches ) {
+            k = urlMatches.length;
+            while( k-- ) {
+              var urlStr = grabRelativePath(urlMatches[k], 4);
+              resources.add(urlStr);
+            }
+          }
         }
       }
     }
   }
-}
+
+  // Execute callback function on resources
+  callback(resources.items());
+});
