@@ -148,7 +148,7 @@ domready(function(){
       if( checkUrlRelative(urlStr) ) {
         // Store stylesheet to resources
         resources.add(urlStr);
-
+// TODO: handle relative path in stylesheet
         // Grab inner urls
         rules = styleSheet.cssRules || styleSheet.rules || [];
         j = rules.length;
