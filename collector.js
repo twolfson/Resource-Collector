@@ -111,7 +111,8 @@ domready(function(){
 
   // In innerHTML, find all src=""
   if( watchInlineElements ) {
-      var srcWithJunkArr = document.body.innerHTML.match(/src=([^>]*>)/g),
+      // TODO: Also collect elements from the head
+      var srcWithJunkArr = document.body.innerHTML.match(/src=([^>]*>)/g) || [],
           srcWithJunk,
           i = srcWithJunkArr.length,
           srcStr;
