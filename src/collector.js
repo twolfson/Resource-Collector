@@ -123,6 +123,27 @@ function stripQuotes(str) {
 }
 
 /**
+ * Helper function that trims css url's (both unquoted and quoted)
+ * @param {String} str String to extract on
+ * @returns {String|Boolean} If successful, a url is returned. If unsuccessful, false will be returned.
+ */
+function stripCssUrl(url) {
+  var retVal = stripQuotes(url),
+      urlArr;
+
+  // If the stripQuotes attempt failed
+  if (retVal === false) {
+    // Get the url via regexp
+    urlArr = url.match(/url\(([^\)]*)\)/i);
+    if (urlArr) {
+      retVal = urlArr[1];
+    }
+  }
+
+  return retVal;
+}
+
+/**
  * Takes a filename and returns the base directory
  * @param {String} filename Name of file to get base directory from
  * @returns {String} Base directory of file
@@ -288,7 +309,7 @@ ResourceCollector.collectCss = function () {
       urlWithExcessArr = ruleContent.match(/url\([^\)]*\)/gi) || [];
       for (k = 0, len3 = urlWithExcessArr.length; k < len3; k++) {
         urlWithExcess = urlWithExcessArr[k];
-        url = stripQuotes(urlWithExcess);
+        url = stripCssUrl(urlWithExcess);
 
         // If there is a url
         if (url !== false) {

@@ -61,10 +61,9 @@ TestCase('ResourceCollector', {
         isInArray;
 
     isInArray = matchInArray(urls, 'relative1.png');
-    alert(JSON.stringify(urls));
     assert('collects relative urls', isInArray);
-    isInArray = matchInArray(urls, 'http:\/\/localhost:8080/relative2.png');
-    assert('collects relative urls and coerces them to absolute urls', isInArray);
+    isInArray = matchInArray(urls, '/src-test/subdir/relative2.png');
+    assert('collects relative urls and coerces them to their proper locations urls', isInArray);
 
     isInArray = matchInArray(urls, /http.*\/absolute2\.png/i);
     assert('collects absolute urls', isInArray);
