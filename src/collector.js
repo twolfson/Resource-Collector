@@ -43,12 +43,26 @@ Set.prototype = {
 // TODO: Objectify URL's?
 
 /**
+ * Helper method that checks if a url has a protocol
+ * @param {String} url Url to check on
+ * @returns {String|Boolean} Hostname if there is one, false otherwise.
+ */
+function getHostname(url) {
+  var urlArr = url.match(/\/\/([^\/]*)/),
+      retVal = false;
+  if (urlArr) {
+    retVal = urlArr[1];
+  }
+  return retVal;
+}
+
+/**
  * Helper method that checks if a url is absolute or relative
  * @param {String} url Url to check on
  * @returns {Boolean} True if the url is absolute, false otherwise.
  */
 function isAbsoluteUrl(url) {
-  return !!(url.match(/([^:]*:)?\/\//));
+  return !!getHostname(url) || (url.length > 0 && url.charAt(0) === '/');
 }
 
 var host = location.hostname;
@@ -60,24 +74,17 @@ var host = location.hostname;
 function isSameDomain(url) {
   // Assume the url is relative to start
   var retBool = true,
-      urlHostArr,
-      urlHost;
+      urlHost = getHostname(url);
 
-  // If the url is absolute
-  if (isAbsoluteUrl(url)) {
-    // Assume different domain since absolute
+  // If the url has a hostname
+  if (urlHost !== false) {
+    // Assume different domain
     retBool = false;
 
-    // Get hostname
-    urlHostArr = url.match(/\/\/([^\/]*)/);
-    if (urlHostArr) {
-      urlHost = urlHostArr[1];
-
-      // TODO: Robustify this? (www. vs www2. will not match)
-      // Check if one is a subdomain of the other (this also accounts for same domain)
-      if( host.indexOf(urlHost) !== -1 || urlHost.indexOf(host) !== -1 ) {
-        retBool = true;
-      }
+    // TODO: Robustify this? (www. vs www2. will not match)
+    // Check if one is a subdomain of the other (this also accounts for same domain)
+    if( host.indexOf(urlHost) !== -1 || urlHost.indexOf(host) !== -1 ) {
+      retBool = true;
     }
   }
 
