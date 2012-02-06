@@ -1,0 +1,12 @@
+/* Note: A late-injected .css file into the body is not interpretted by the DOM */
+#notAnElement1 {
+  background: url('http://localhost/public/absolute1.png') 0 0 repeat;
+}
+
+#notAnElement2 {
+  background: url("http://localhost/public/absolute2.png") 0 20px repeat;
+}
+
+#notAnElement2b {
+  background: url("absolute2.png") 0 20px repeat;
+}

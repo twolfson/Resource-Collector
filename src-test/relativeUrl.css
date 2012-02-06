@@ -1,0 +1,11 @@
+#notAnElement1 {
+  background: url('relative1.png') 0 0 repeat;
+}
+
+#notAnElement2 {
+  background: url("subdir/relative2.png") 0 20px repeat;
+}
+
+#notAnElement2b {
+  background: url("http://localhost/public/absolute2.png") 0 20px repeat;
+}
