@@ -108,7 +108,7 @@ function stripQuotes(str) {
   }
 
   // Grab the actual quote and find the next one
-  var quote = str[quoteIndex],
+  var quote = str.charAt(quoteIndex),
       endIndex = str.indexOf(quote, quoteIndex + 1),
       url;
 
@@ -191,7 +191,7 @@ var htmlElt = document.documentElement;
 ResourceCollector.collectInline = function () {
   // Collect the link href's and src's seperately
   var docHtml = htmlElt.innerHTML,
-      hrefWithExcessArr = docHtml.match(/<link[^>]*href=([^>]*>)/g) || [],
+      hrefWithExcessArr = docHtml.match(/<link[^>]*href=([^>]*>)/gi) || [],
       hrefWithExcess,
       i = 0,
       len = hrefWithExcessArr.length;
@@ -202,7 +202,7 @@ ResourceCollector.collectInline = function () {
     hrefWithExcessArr[i] = hrefWithExcess.slice(hrefWithExcess.indexOf('href='));
   }
 
-  var srcWithExcessArr = docHtml.match(/src=([^>]*>)/g) || [],
+  var srcWithExcessArr = docHtml.match(/src=([^>]*>)/gi) || [],
   // Then, concatenate them together
       urlWithExcessArr = hrefWithExcessArr.concat(srcWithExcessArr),
       urlWithExcess,
@@ -241,7 +241,9 @@ ResourceCollector.collectCss = function () {
       rules,
       j,
       len2,
+      rule,
       ruleContent,
+      ruleStyle,
       urlWithExcessArr,
       urlWithExcess,
       k,
@@ -265,11 +267,27 @@ ResourceCollector.collectCss = function () {
 
     // Iterate the rules
     for (j = 0, len2 = rules.length; j < len2; j++) {
+      rule = rules[j];
       // Get the rule's content
-      ruleContent = rules[j].cssText;
+      ruleContent = rule.cssText;
+
+      // If the cssText was not found at first
+      if (ruleContent === undefined) {
+        // Look for the rule's style
+        ruleStyle = rule.style;
+
+        // If the rule's style exists
+        if (ruleStyle !== undefined) {
+          // Use the cssText
+          ruleContent = ruleStyle.cssText || '';
+        } else {
+        // Otherwise, skip this rule
+          continue;
+        }
+      }
 
       // Find any url's mentioned in the css
-      urlWithExcessArr = ruleContent.match(/url\([^\)]*\)/g) || [];
+      urlWithExcessArr = ruleContent.match(/url\([^\)]*\)/gi) || [];
       for (k = 0, len3 = urlWithExcessArr.length; k < len3; k++) {
         urlWithExcess = urlWithExcessArr[k];
         url = stripQuotes(urlWithExcess);
