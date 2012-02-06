@@ -2,10 +2,8 @@
 // TODO: Wrap in anonymous function
 // AMD inspired by domready
 (function (name, definition) {
-  var defObj;
   if (typeof define === 'function') {
-    defObj[name] = definition;
-    define(defObj);
+    define(definition);
   } else if (typeof exports !== 'undefined') {
     exports[name] = definition;
   } else {
@@ -99,29 +97,25 @@ function stripQuotes(str) {
       doubleQuoteIndex = str.indexOf('"'),
       quoteIndex = Math.min(singleQuoteIndex, doubleQuoteIndex);
 
-  // If there is no quote, return early
+  // If one of the quotes doesn't exist, use the second index
   if (quoteIndex === -1) {
-    return false;
-  }
+    quoteIndex = Math.max(singleQuoteIndex, doubleQuoteIndex);
 
-  // Grab the actual quote
-  var quote = str[quoteIndex],
-      endIndex,
-      url;
-
-  // Find the next quote
-  // TODO: Test \"
-  endIndex = quoteIndex;
-  do {
-    endIndex = str.indexOf(quote, endIndex + 1);
-
-    // If there is no end quote, return early
-    if (endIndex === -1) {
+    // If there still is no quote, return early
+    if (quoteIndex === -1) {
       return false;
     }
+  }
 
-  // If it is preceded by a slash, keep on looping
-  } while (str[endIndex - 1] === "\\");
+  // Grab the actual quote and find the next one
+  var quote = str[quoteIndex],
+      endIndex = str.indexOf(quote, quoteIndex + 1),
+      url;
+
+  // If there is no end quote, return early
+  if (endIndex === -1) {
+    return false;
+  }
 
   // Collect the URL
   url = str.slice(quoteIndex + 1, endIndex);
@@ -140,6 +134,20 @@ function basePath(filename) {
   // The return string will include the slash (if there is none, it will truncate to an empty string)
       retStr = filename.slice(0, lastSlashIndex + 1);
   return retStr;
+}
+
+/**
+ * Takes a url and removes the anchor (if it exists)
+ * @param {String} url Url to strip anchor from
+ * @returns {String} Anchor-free url
+ */
+function stripAnchor(url) {
+  var anchorIndex = url.indexOf('#'),
+      retVal = url;
+  if (anchorIndex !== -1) {
+    retVal = url.slice(0, anchorIndex);
+  }
+  return retVal;
 }
 
 /*** END: Helper objects/functions ***/
@@ -184,17 +192,25 @@ ResourceCollector.collectInline = function () {
   // Collect the link href's and src's seperately
   var docHtml = htmlElt.innerHTML,
       hrefWithExcessArr = docHtml.match(/<link[^>]*href=([^>]*>)/g) || [],
-      srcWithExcessArr = docHtml.match(/src=([^>]*>)/g) || [],
+      hrefWithExcess,
+      i = 0,
+      len = hrefWithExcessArr.length;
+
+  // Iterate the href's and extract the substring so 'strips' go accordingly
+  for (; i < len; i++) {
+    hrefWithExcess = hrefWithExcessArr[i];
+    hrefWithExcessArr[i] = hrefWithExcess.slice(hrefWithExcess.indexOf('href='));
+  }
+
+  var srcWithExcessArr = docHtml.match(/src=([^>]*>)/g) || [],
   // Then, concatenate them together
       urlWithExcessArr = hrefWithExcessArr.concat(srcWithExcessArr),
       urlWithExcess,
-      i = 0,
-      len = urlWithExcessArr.length,
       url,
       retArr = [];
 
   // Loop through all the sources
-  for (; i < len; i++) {
+  for (i = 0, len = urlWithExcessArr.length; i < len; i++) {
     // Strip the quotes from the source
     urlWithExcess = urlWithExcessArr[i];
     url = stripQuotes(urlWithExcess);
@@ -242,7 +258,10 @@ ResourceCollector.collectCss = function () {
     stylesheetDir = basePath(stylesheetUrl);
 
     // Get the stylesheet's rules
-    rules = stylesheet.cssRules || stylesheet.rules || [];
+    rules = [];
+    try {
+      rules = stylesheet.cssRules || stylesheet.rules || [];
+    } catch (e) {}
 
     // Iterate the rules
     for (j = 0, len2 = rules.length; j < len2; j++) {
@@ -286,6 +305,7 @@ ResourceCollector.prototype = {
         self = this._self,
     // Set up intermediate variables
         arr,
+        url,
         i,
         len,
     // Set up resources set (prevent redundancy)
@@ -296,7 +316,8 @@ ResourceCollector.prototype = {
       // Collect them and add to the resource collection
       arr = ResourceCollector.collectInline();
       for (i = 0, len = arr.length; i < len; i++) {
-        resourceSet.add(arr[i]);
+        url = stripAnchor(arr[i]);
+        resourceSet.add(url);
       }
     }
 
@@ -305,13 +326,15 @@ ResourceCollector.prototype = {
       // Collect them and add to the resource collection
       arr = ResourceCollector.collectCss();
       for (i = 0, len = arr.length; i < len; i++) {
-        resourceSet.add(arr[i]);
+        url = stripAnchor(arr[i]);
+        resourceSet.add(url);
       }
     }
 
     // If we should be tracking this document, add it to the collection
     if (self === true) {
-      resourceSet.add(location);
+      url = stripAnchor(location + '');
+      resourceSet.add(url);
     }
 
     // Collect all resource filtering options
