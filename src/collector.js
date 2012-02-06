@@ -1,5 +1,3 @@
-// TODO: Test in IE6
-// TODO: Wrap in anonymous function
 // AMD inspired by domready
 (function (name, definition) {
   if (typeof define === 'function') {

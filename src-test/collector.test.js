@@ -60,13 +60,14 @@ TestCase('ResourceCollector', {
         urls = rc.collect(),
         isInArray;
 
-    // isInArray = matchInArray(urls, 'relative1.png');
-    // assert('collects relative urls', isInArray);
-    // isInArray = matchInArray(urls, /http.*\/relative1\.png/i);
-    // assert('collects relative urls and coerces them to absolute urls', isInArray);
+    isInArray = matchInArray(urls, 'relative1.png');
+    alert(JSON.stringify(urls));
+    assert('collects relative urls', isInArray);
+    isInArray = matchInArray(urls, 'http:\/\/localhost:8080/relative2.png');
+    assert('collects relative urls and coerces them to absolute urls', isInArray);
 
-    // isInArray = matchInArray(urls, /http.*\/absolute2\.png/i);
-    // assert('collects absolute urls', isInArray);
+    isInArray = matchInArray(urls, /http.*\/absolute2\.png/i);
+    assert('collects absolute urls', isInArray);
   },
   'test A \'self\' ResourceCollector': function () {
     var rc = new ResourceCollector({'self': true}),
