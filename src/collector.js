@@ -41,6 +41,19 @@ Set.prototype = {
 };
 
 // TODO: Objectify URL's?
+/**
+ * Helper method that checks grabs the hostname and protocol if available
+ * @param {String} url Url to check on
+ * @returns {String|Boolean} Hostname and protocol if there is one, false otherwise.
+ */
+function getHostAndProtocol(url) {
+  var urlArr = url.match(/^[^*\/]*\/\/(?:[^\/]*\/)/),
+      retVal = false;
+  if (urlArr) {
+    retVal = urlArr[0];
+  }
+  return retVal;
+}
 
 /**
  * Helper method that checks if a url has a protocol
@@ -65,7 +78,9 @@ function isAbsoluteUrl(url) {
   return !!getHostname(url) || (url.length > 0 && url.charAt(0) === '/');
 }
 
-var host = location.hostname;
+var host = location.hostname,
+    _location = location + '',
+    _hostAndProtocol = getHostAndProtocol(_location);
 /**
  * Helper method that checks if a url is on the same domain (needs some robustification with different subdomains)
  * @param {String} url Url to check on
@@ -282,8 +297,10 @@ ResourceCollector.collectCss = function () {
     stylesheet = stylesheets[i];
 
     // Grab the stylesheet's url (for relative paths)
-    stylesheetUrl = stylesheet.href;
+    stylesheetUrl = stylesheet.href || _location;
     stylesheetDir = basePath(stylesheetUrl);
+    stylesheetHostAndProtocol = getHostAndProtocol(stylesheetUrl);
+    isNotSameHostandProtocol = stylesheetHostAndProtocol !== _hostAndProtocol;
 
     // Get the stylesheet's rules
     rules = [];
@@ -324,6 +341,10 @@ ResourceCollector.collectCss = function () {
           if (!isAbsoluteUrl(url)) {
             // Prepend the stylesheet location
             url = stylesheetDir + url;
+          } else if (!getHostname(url) && isNotSameHostandProtocol) {
+          // Otherwise, if the url does not have its own domain AND the domain name and protocol of the stylesheet does not match the location's
+            // Prepend the domain and protocol
+            url = stylesheetHostAndProtocol + url;
           }
 
           // Add it to the return array
@@ -377,7 +398,7 @@ ResourceCollector.prototype = {
 
     // If we should be tracking this document, add it to the collection
     if (self === true) {
-      url = stripAnchor(location + '');
+      url = stripAnchor(_location);
       resourceSet.add(url);
     }
 
