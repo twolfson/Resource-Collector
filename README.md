@@ -14,20 +14,6 @@ After all the url's have been collected, they are deduplicated and returned in a
 
 Note: For CSS background images (and the like), if the path is relative, it is converted to an absolute path in reference to the stylesheet.
 
-Usage
-========
-To collect the resources on your current page, download and include the FileWatcher script on your page (either via &lt;script&gt; or an AMD loader).
-    <script src="//raw.github.com/twolfson/Resource-Collector/master/src/collector.js"></script>
-    OR
-    require(['ResourceCollector'], function (ResourceCollector) { /* Your code goes here */ });
-
-Then, collects all the resources in one fell swoop.
-
-    var resources = ResourceCollector.collect();
-    /* Do stuff with your array of resources */
-
-To change what is collected, please refer to the API.
-
 Develop with a hands-free refresh
 =================================
 ResourceCollector was initially built as a part of a sister script called FileWatcher. When these scripts are used together, they allow for webpages to dynamically refresh whenever there is an HTML change and seamlessly update images and CSS.
@@ -70,6 +56,21 @@ This snippet will reload when there is an HTML or script change. Additionally, w
         }());
     </script>
 
+Standalone Usage
+========
+To collect the resources on your current page, download and include the ResourceCollector script on your page (either via &lt;script&gt; or an AMD loader).
+
+    <script src="//raw.github.com/twolfson/Resource-Collector/master/src/collector.js"></script>
+    OR
+    require(['ResourceCollector'], function (ResourceCollector) { /* Your code goes here */ });
+
+Then, collects all the resources in one fell swoop.
+
+    var resources = ResourceCollector.collect();
+    /* Do stuff with your array of resources */
+
+To change what is collected, please refer to the API.
+
 Tested in
 =========
  - Firefox 7
@@ -88,13 +89,13 @@ Static methods
 
 Constructor
 ----------------
- - **ResourceCollector**([options]) - Takes in same optional set of options as listed in the static method above. If no options are given, fall back to
+ - **ResourceCollector**([options]) - Takes in same optional set of options as listed in the static method above. If no options are given, we fall back to
 
-    {'inline': true, 'css': true, 'self': true, 'sameDomainOnly': true}
+        {'inline': true, 'css': true, 'self': true, 'sameDomainOnly': true}
 
-Otherwise, options are merged onto
+ Otherwise, options are merged onto
 
-    {'inline': false, 'css': false, 'self': false, 'sameDomainOnly': true}
+         {'inline': false, 'css': false, 'self': false, 'sameDomainOnly': true}
 
 Instance methods
 ----------------
